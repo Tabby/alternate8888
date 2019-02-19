@@ -4,14 +4,17 @@ package alternate8888.machine;
  * @author Tabby Cromarty
  */
 public class CPU {
-  private final Register instructionRegister = new Register();
-  private final Register accumulator = new Register();
-  private final Register regH = new Register();
-  private final Register regL = new Register();
-  private final Register regD = new Register();
-  private final Register regE = new Register();
-  private final Register regB = new Register();
-  private final Register regC = new Register();
+
+  private static final int WORD_BITS = 16;
+
+  private final Register instructionRegister = new Register8Bit();
+  private final Register accumulator = new Register8Bit();
+  private final Register regH = new Register8Bit();
+  private final Register regL = new Register8Bit();
+  private final Register regD = new Register8Bit();
+  private final Register regE = new Register8Bit();
+  private final Register regB = new Register8Bit();
+  private final Register regC = new Register8Bit();
   private final RegisterPair regPairB = new RegisterPair(regB, regC);
   private final RegisterPair regPairD = new RegisterPair(regD, regE);
   private final RegisterPair regPairH = new RegisterPair(regH, regL);
@@ -39,9 +42,65 @@ public class CPU {
     ram.set(stackPointer, low);
   }
 
-  ///////////////////////////////////
+  private void checkAndSetStatusBits(final Register register) {
+    if ((register.get() & 0x80) > 0) {
+      statusBits.setSign();
+    }
+    if (register.get() == 0) {
+      statusBits.setZero();
+    }
+    if (getParity(register.get(), register.getWidth())) {
+      statusBits.setParity();
+    }
+  }
+
+  private void increment(final Register register) {
+    register.set(increment(register.get(), register.getWidth()));
+  }
+
+  private int increment(int data,
+                        final int bits) {
+    if (data == (bits == 8 ? 0xff : 0xffff)) {
+      data = 0;
+      statusBits.setCarry();
+    } else {
+      data++;
+    }
+    return data;
+  }
+
+  private void decrement(final Register register) {
+    register.set(decrement(register.get(), register.getWidth()));
+  }
+
+  private int decrement(int data,
+                        final int bits) {
+    if (data == 0x00) {
+      data = (bits == 8 ? 0xff : 0xffff);
+      statusBits.setCarry();
+    } else {
+      data--;
+    }
+    return data;
+  }
+
+  private boolean getParity(final int data,
+                            final int bits) {
+    int parityCount = 0;
+    for (int i = bits - 1; i >= 0; i--) {
+      if ((data & i) > 0) {
+        parityCount++;
+      }
+      if ((parityCount % 2) != 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  ////////////////////////////////
   ///// COMMAND INSTRUCTIONS /////
-  ///////////////////////////////////
+  ////////////////////////////////
 
   //////////////////////
   // I/O Instructions //
@@ -178,6 +237,67 @@ public class CPU {
   private void noOperation() {
   }
 
+  ////////////////////////////////////////
+  ///// SINGLE REGISTER INSTRUCTIONS /////
+  ////////////////////////////////////////
+
+  private Register getSingleRegister(final int reg) {
+    switch (reg) {
+      case 0:
+        return regB;
+      case 1:
+        return regC;
+      case 2:
+        return regD;
+      case 3:
+        return regE;
+      case 4:
+        return regH;
+      case 5:
+        return regL;
+      case 6:
+        return ram.address(regPairH);
+      case 7:
+        return accumulator;
+      default:
+        throw new RuntimeException("Invalid register number");
+    }
+  }
+
+  /**
+   * INR (INCREMENT REGISTER OR MEMORY) - The specified byte is incremented by
+   * one.
+   *
+   * Status Bits Affected: Zero, Sign, Parity, and Carry
+   *
+   * Example: Assume the following instruction is present: 00 000 100. According
+   * to the table of register bit patterns given above, the byte in register B is
+   * to be incremented by 1. If the initial byte is 00 000 000, the incremented
+   * byte will be 00 000 01.
+   */
+  private void incrementRegisterOrMemory(final int reg) {
+    final Register register = getSingleRegister(reg);
+    increment(register);
+    checkAndSetStatusBits(register);
+  }
+
+  /**
+   * DCR (DECREMENT REGISTER OR MEMORY) - The specified byte is decremented by
+   * one.
+   *
+   * Status Bits Affected: Zero, Sign, Parity, and Carry
+   *
+   * Example: Assume the following instruction is present: 00 001 101. According
+   * to the table of register bit patterns given above, the byte in register C is
+   * to be decremented by 1. If the initial byte is 00 000 001, the decremented
+   * byte will be 00 000 000.
+   */
+  private void decrementRegisterOrMemory(final int reg) {
+    final Register register = getSingleRegister(reg);
+    decrement(register);
+    checkAndSetStatusBits(register);
+  }
+
   private void executeInstruction() {
     instructionRegister.set(ram.get(programCounter));
     final int instruction = instructionRegister.get();
@@ -212,6 +332,29 @@ public class CPU {
         break;
       case 0067:
         setCarry();
+        break;
+      case 0000:
+        noOperation();
+        break;
+      case 0004:
+      case 0014:
+      case 0024:
+      case 0034:
+      case 0044:
+      case 0054:
+      case 0064:
+      case 0074:
+        incrementRegisterOrMemory(instruction & 0070);
+        break;
+      case 0005:
+      case 0015:
+      case 0025:
+      case 0035:
+      case 0045:
+      case 0055:
+      case 0065:
+      case 0075:
+        decrementRegisterOrMemory(instruction & 0070);
         break;
     }
     programCounter.advance();

@@ -1,17 +1,11 @@
 package alternate8888.machine;
 
-/**
- * @author Tabby Cromarty
- */
-public class Register {
-  private int data;
+public interface Register {
 
-  public int get() {
-    return data;
-  }
+  int get();
 
-  public void set(final int data) {
-    this.data = data;
-  }
+  void set(int data);
+
+  int getWidth();
 
 }

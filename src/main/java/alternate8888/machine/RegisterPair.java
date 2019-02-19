@@ -1,6 +1,6 @@
 package alternate8888.machine;
 
-class RegisterPair {
+class RegisterPair implements Register {
   private final Register high;
   private final Register low;
 
@@ -10,28 +10,35 @@ class RegisterPair {
     this.low = low;
   }
 
-  int get() {
+  @Override
+  public int get() {
     return (high.get() << 8) | low.get();
   }
 
-  int getHigh() {
+  public int getHigh() {
     return high.get();
   }
 
-  int getLow() {
+  public int getLow() {
     return low.get();
   }
 
-  void set(final int value) {
+  @Override
+  public void set(final int value) {
     high.set((value >> 8) & 0xff);
     low.set(value & 0xff);
   }
 
-  void setHigh(final int value) {
+  public void setHigh(final int value) {
     high.set(value);
   }
 
-  void setLow(final int value) {
+  public void setLow(final int value) {
     low.set(value);
+  }
+
+  @Override
+  public int getWidth() {
+    return 16;
   }
 }

@@ -1,6 +1,6 @@
 package alternate8888.machine;
 
-final class SpecialRegister {
+final class SpecialRegister implements Register {
   int high;
   int low;
 
@@ -12,6 +12,7 @@ final class SpecialRegister {
     return low;
   }
 
+  @Override
   public int get() {
     return (high << 8) | low;
   }
@@ -24,6 +25,7 @@ final class SpecialRegister {
     low = val & 0xff;
   }
 
+  @Override
   public void set(final int val) {
     setLow(val & 0xff);
     setHigh((val >> 8) & 0xff);
@@ -53,5 +55,10 @@ final class SpecialRegister {
     } else {
       low--;
     }
+  }
+
+  @Override
+  public int getWidth() {
+    return 16;
   }
 }
