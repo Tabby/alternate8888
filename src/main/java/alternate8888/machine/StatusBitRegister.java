@@ -51,7 +51,7 @@ public class StatusBitRegister {
     if (set) {
       set(bit);
     } else {
-      unset(bit);
+      clear(bit);
     }
   }
 
@@ -59,7 +59,7 @@ public class StatusBitRegister {
     status |= bit;
   }
 
-  private void unset(final byte bit) {
+  private void clear(final byte bit) {
     status = (byte) (status & (0x1F ^ bit));
   }
 
@@ -125,6 +125,26 @@ public class StatusBitRegister {
 
   public void setAuxCarry() {
     set(AUX_CARRY_BIT);
+  }
+
+  public void clearCarry() {
+    clear(CARRY_BIT);
+  }
+
+  public void clearSign() {
+    clear(SIGN_BIT);
+  }
+
+  public void clearZero() {
+    clear(ZERO_BIT);
+  }
+
+  public void clearParity() {
+    clear(PARITY_BIT);
+  }
+
+  public void clearAuxCarry() {
+    clear(AUX_CARRY_BIT);
   }
 
   public void toggleCarry() {

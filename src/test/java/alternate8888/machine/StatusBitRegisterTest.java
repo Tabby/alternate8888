@@ -25,6 +25,8 @@ public class StatusBitRegisterTest {
     assertFalse(status.isCarry());
     status.assignCarry(true);
     assertTrue(status.isCarry());
+    status.clearCarry();
+    assertFalse(status.isCarry());
   }
 
   @Test
@@ -40,6 +42,8 @@ public class StatusBitRegisterTest {
     assertFalse(status.isSign());
     status.assignSign(true);
     assertTrue(status.isSign());
+    status.clearSign();
+    assertFalse(status.isSign());
   }
 
   @Test
@@ -55,6 +59,8 @@ public class StatusBitRegisterTest {
     assertFalse(status.isZero());
     status.assignZero(true);
     assertTrue(status.isZero());
+    status.clearZero();
+    assertFalse(status.isZero());
   }
 
   @Test
@@ -70,6 +76,8 @@ public class StatusBitRegisterTest {
     assertFalse(status.isParity());
     status.assignParity(true);
     assertTrue(status.isParity());
+    status.clearParity();
+    assertFalse(status.isParity());
   }
 
   @Test
@@ -85,6 +93,8 @@ public class StatusBitRegisterTest {
     assertFalse(status.isAuxCarry());
     status.assignAuxCarry(true);
     assertTrue(status.isAuxCarry());
+    status.clearAuxCarry();
+    assertFalse(status.isAuxCarry());
   }
 
 }

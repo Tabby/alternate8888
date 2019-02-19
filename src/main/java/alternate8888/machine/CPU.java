@@ -292,6 +292,60 @@ public class CPU {
     checkAndSetStatusBits(register);
   }
 
+  /**
+   * CMA (COMPLEMENT ACCUMULATOR) - Each bit in the accumulator is complemented
+   * (1s become 0s and 0s become 1s).
+   *
+   * Status Bits: Unaffected
+   */
+  private void complementAccumulator() {
+    accumulator.set(accumulator.get() ^ 0xFF);
+  }
+
+  /**
+   * DAA (DECIMAL ADJUST ACCUMULATOR) - The 8-bit accumulator byte is converted
+   * into two 4-bit BCD (binary-coded-decimal) numbers. The instruction is
+   * affected by the Aux Carry bit.
+   *
+   * The DAA instruction performs two operations:
+   *
+   * 1. If the least significant 4 bits in the accumulator byte (bits 0-3)
+   * represent a BCD digit greater than 9 or if the Auxiliary Carry Bit is set to
+   * 1, the four bits are automatically incremented by 6. If not the accumulator
+   * is unaffected.
+   *
+   * 2. If the most significant 4 bits in the accumulator byte (bits 4-7)
+   * represent a BCD digit greater than 9 or if the Carry Bit is set to 1, the
+   * four bits are automatically incremented by 6. If not the accumulator is
+   * unaffected.
+   *
+   * Status Bits Affected: Zero, Sign, Parity, Carry, and Auxiliary Carry
+   *
+   * Example: Assume the accumulator byte is 10 100 100. The DAA instruction will
+   * automatically consider the byte as two 4-bit bytes: 1010 0100. Since the
+   * value of the least significant bits is less than 9, the accumulator is
+   * initially unaffected. The value of the most significant 4 bits is greater
+   * than 9, however, so the 4 bits are incremented by 6 to give 1 0000. The most
+   * significant bit sets the Carry Bit to 1, and the accumulator now contains 00
+   * 000 100.
+   */
+  private void decimalAdjustAccumulator() {
+    int msn = (accumulator.get() >> 4) & 0x0f;
+    int lsn = accumulator.get() & 0x0f;
+    if ((lsn > 9) || statusBits.isAuxCarry()) {
+      lsn += 6;
+      statusBits.assignAuxCarry(lsn > 9);
+      lsn &= 0x0f;
+    }
+    if ((msn > 9) || statusBits.isCarry()) {
+      msn += 6;
+      statusBits.assignCarry(msn > 9);
+      msn &= 0x0f;
+    }
+    accumulator.set((msn << 4) | lsn);
+    checkAndSetStatusBits(accumulator);
+  }
+
   private void executeInstruction() {
     instructionRegister.set(ram.get(programCounter));
     final int instruction = instructionRegister.get();
@@ -349,6 +403,12 @@ public class CPU {
       case 0065:
       case 0075:
         decrementRegisterOrMemory(instruction & 0070);
+        break;
+      case 0057:
+        complementAccumulator();
+        break;
+      case 0047:
+        decimalAdjustAccumulator();
         break;
     }
     increment(programCounter);
