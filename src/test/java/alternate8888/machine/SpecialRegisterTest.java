@@ -28,4 +28,25 @@ public class SpecialRegisterTest {
     sr.advance();
     assertEquals(0, sr.get());
   }
+
+  @Test
+  public void testDecrement1() {
+    sr.set(1);
+    sr.decrement();
+    assertEquals(0, sr.get());
+  }
+
+  @Test
+  public void testDecrement256() {
+    sr.set(256);
+    sr.decrement();
+    assertEquals(255, sr.get());
+  }
+
+  @Test
+  public void testDecrement0() {
+    sr.set(0);
+    sr.decrement();
+    assertEquals(65535, sr.get());
+  }
 }

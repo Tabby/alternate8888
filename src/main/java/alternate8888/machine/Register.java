@@ -4,13 +4,13 @@ package alternate8888.machine;
  * @author Tabby Cromarty
  */
 public class Register {
-  private byte data;
+  private int data;
 
-  public byte get() {
+  public int get() {
     return data;
   }
 
-  public void set(final byte data) {
+  public void set(final int data) {
     this.data = data;
   }
 

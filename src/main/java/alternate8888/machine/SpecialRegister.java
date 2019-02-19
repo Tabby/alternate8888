@@ -41,4 +41,17 @@ final class SpecialRegister {
       low++;
     }
   }
+
+  void decrement() {
+    if (low == 0) {
+      low = 0xff;
+      if (high == 0) {
+        high = 0xff;
+      } else {
+        high--;
+      }
+    } else {
+      low--;
+    }
+  }
 }

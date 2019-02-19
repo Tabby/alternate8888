@@ -14,8 +14,24 @@ class RegisterPair {
     return (high.get() << 8) | low.get();
   }
 
+  int getHigh() {
+    return high.get();
+  }
+
+  int getLow() {
+    return low.get();
+  }
+
   void set(final int value) {
-    high.set((byte) ((value >> 8) & 0xff));
-    low.set((byte) (value & 0xff));
+    high.set((value >> 8) & 0xff);
+    low.set(value & 0xff);
+  }
+
+  void setHigh(final int value) {
+    high.set(value);
+  }
+
+  void setLow(final int value) {
+    low.set(value);
   }
 }

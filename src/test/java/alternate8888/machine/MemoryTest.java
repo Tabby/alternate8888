@@ -87,4 +87,14 @@ public class MemoryTest {
     assertEquals(0, memory.get(0x1f, 0x9f));
   }
 
+  @Test
+  public void testMemorySetGetH01LFESpecialRegister() {
+    final SpecialRegister sr = new SpecialRegister();
+    sr.set(0x01fe);
+    assertEquals(0, memory.get(sr));
+    final byte data = 0x12;
+    memory.set(sr, data);
+    assertEquals(data, memory.get(sr));
+  }
+
 }
