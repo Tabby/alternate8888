@@ -43,15 +43,9 @@ public class CPU {
   }
 
   private void checkAndSetStatusBits(final Register register) {
-    if ((register.get() & 0x80) > 0) {
-      statusBits.setSign();
-    }
-    if (register.get() == 0) {
-      statusBits.setZero();
-    }
-    if (getParity(register.get(), register.getWidth())) {
-      statusBits.setParity();
-    }
+    statusBits.assignSign((register.get() & 0x80) > 0);
+    statusBits.assignZero(register.get() == 0);
+    statusBits.assignParity(getParity(register.get(), register.getWidth()));
   }
 
   private void increment(final Register register) {
@@ -62,8 +56,8 @@ public class CPU {
                         final int bits) {
     if (data == (bits == 8 ? 0xff : 0xffff)) {
       data = 0;
-      statusBits.setCarry();
     } else {
+      statusBits.assignAuxCarry((bits == 8) && ((data & 0x0F) == 0x09));
       data++;
     }
     return data;
@@ -77,8 +71,8 @@ public class CPU {
                         final int bits) {
     if (data == 0x00) {
       data = (bits == 8 ? 0xff : 0xffff);
-      statusBits.setCarry();
     } else {
+      statusBits.assignAuxCarry((bits == 8) && ((data & 0x0F) == 0x10));
       data--;
     }
     return data;
@@ -268,7 +262,7 @@ public class CPU {
    * INR (INCREMENT REGISTER OR MEMORY) - The specified byte is incremented by
    * one.
    *
-   * Status Bits Affected: Zero, Sign, Parity, and Carry
+   * Status Bits Affected: Zero, Sign, Parity, and Aux Carry
    *
    * Example: Assume the following instruction is present: 00 000 100. According
    * to the table of register bit patterns given above, the byte in register B is
@@ -285,7 +279,7 @@ public class CPU {
    * DCR (DECREMENT REGISTER OR MEMORY) - The specified byte is decremented by
    * one.
    *
-   * Status Bits Affected: Zero, Sign, Parity, and Carry
+   * Status Bits Affected: Zero, Sign, Parity, and Aux Carry
    *
    * Example: Assume the following instruction is present: 00 001 101. According
    * to the table of register bit patterns given above, the byte in register C is

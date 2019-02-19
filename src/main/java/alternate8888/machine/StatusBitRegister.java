@@ -46,8 +46,21 @@ public class StatusBitRegister {
     return (status & bit) != 0;
   }
 
+  private void assign(final byte bit,
+                      final boolean set) {
+    if (set) {
+      set(bit);
+    } else {
+      unset(bit);
+    }
+  }
+
   private void set(final byte bit) {
     status |= bit;
+  }
+
+  private void unset(final byte bit) {
+    status = (byte) (status & (0x1F ^ bit));
   }
 
   private void toggle(final byte bit) {
@@ -72,6 +85,26 @@ public class StatusBitRegister {
 
   public boolean isAuxCarry() {
     return isSet(AUX_CARRY_BIT);
+  }
+
+  public void assignCarry(final boolean set) {
+    assign(CARRY_BIT, set);
+  }
+
+  public void assignSign(final boolean set) {
+    assign(SIGN_BIT, set);
+  }
+
+  public void assignZero(final boolean set) {
+    assign(ZERO_BIT, set);
+  }
+
+  public void assignParity(final boolean set) {
+    assign(PARITY_BIT, set);
+  }
+
+  public void assignAuxCarry(final boolean set) {
+    assign(AUX_CARRY_BIT, set);
   }
 
   public void setCarry() {
