@@ -6,7 +6,7 @@ import org.junit.Test;
 
 public class SpecialRegisterTest {
 
-  SpecialRegister sr = new SpecialRegister();
+  Register16Bit sr = new Register16Bit();
 
   @Test
   public void testAdvance0() {

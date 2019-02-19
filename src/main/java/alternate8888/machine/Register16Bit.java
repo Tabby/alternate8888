@@ -1,6 +1,6 @@
 package alternate8888.machine;
 
-final class SpecialRegister implements Register {
+final class Register16Bit implements Register {
   int high;
   int low;
 
@@ -29,32 +29,6 @@ final class SpecialRegister implements Register {
   public void set(final int val) {
     setLow(val & 0xff);
     setHigh((val >> 8) & 0xff);
-  }
-
-  void advance() {
-    if (low == 0xff) {
-      low = 0x00;
-      if (high == 0xff) {
-        high = 0x00;
-      } else {
-        high++;
-      }
-    } else {
-      low++;
-    }
-  }
-
-  void decrement() {
-    if (low == 0) {
-      low = 0xff;
-      if (high == 0) {
-        high = 0xff;
-      } else {
-        high--;
-      }
-    } else {
-      low--;
-    }
   }
 
   @Override

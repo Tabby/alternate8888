@@ -89,7 +89,7 @@ public class MemoryTest {
 
   @Test
   public void testMemorySetGetH01LFESpecialRegister() {
-    final SpecialRegister sr = new SpecialRegister();
+    final Register16Bit sr = new Register16Bit();
     sr.set(0x01fe);
     assertEquals(0, memory.get(sr));
     final byte data = 0x12;

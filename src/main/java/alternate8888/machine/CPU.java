@@ -15,18 +15,18 @@ public class CPU {
   private final Register regE = new Register8Bit();
   private final Register regB = new Register8Bit();
   private final Register regC = new Register8Bit();
-  private final RegisterPair regPairB = new RegisterPair(regB, regC);
-  private final RegisterPair regPairD = new RegisterPair(regD, regE);
-  private final RegisterPair regPairH = new RegisterPair(regH, regL);
+  private final Register regPairB = new RegisterPair(regB, regC);
+  private final Register regPairD = new RegisterPair(regD, regE);
+  private final Register regPairH = new RegisterPair(regH, regL);
 
   private final StatusBitRegister statusBits = new StatusBitRegister();
-  private final SpecialRegister programCounter = new SpecialRegister();
-  private final SpecialRegister stackPointer = new SpecialRegister();
+  private final Register16Bit programCounter = new Register16Bit();
+  private final Register stackPointer = new Register16Bit();
   private final Memory ram = new Memory();
 
   private volatile Boolean interruptsEnabled = Boolean.FALSE;
 
-  private void stackPush(final SpecialRegister register) {
+  private void stackPush(final Register16Bit register) {
     stackPush(register.high, register.low);
   }
 
@@ -36,9 +36,9 @@ public class CPU {
 
   private void stackPush(final int high,
                          final int low) {
-    stackPointer.decrement();
+    decrement(stackPointer);
     ram.set(stackPointer, high);
-    stackPointer.decrement();
+    decrement(stackPointer);
     ram.set(stackPointer, low);
   }
 
@@ -116,7 +116,7 @@ public class CPU {
    */
   private void input() {
     // TODO: Implement simulated external devices
-    programCounter.advance();
+    increment(programCounter);
     // int device = ram.get(programCounter);
     // accumulator.set(0);
   }
@@ -131,7 +131,7 @@ public class CPU {
    */
   private void output() {
     // TODO: Implement simulated external devices
-    programCounter.advance();
+    increment(programCounter);
   }
 
   ////////////////////////////
@@ -166,7 +166,7 @@ public class CPU {
    * Status Bits: Unaffected
    */
   private void haltInstruction() {
-    programCounter.advance();
+    increment(programCounter);
     synchronized (interruptsEnabled) {
       try {
         interruptsEnabled.wait();
@@ -357,6 +357,6 @@ public class CPU {
         decrementRegisterOrMemory(instruction & 0070);
         break;
     }
-    programCounter.advance();
+    increment(programCounter);
   }
 }
