@@ -9,17 +9,21 @@ public class CPU {
 
   private final Register instructionRegister = new Register8Bit();
   private final Register accumulator = new Register8Bit();
-  private final Register regH = new Register8Bit();
-  private final Register regL = new Register8Bit();
-  private final Register regD = new Register8Bit();
-  private final Register regE = new Register8Bit();
   private final Register regB = new Register8Bit();
   private final Register regC = new Register8Bit();
-  private final Register regPairB = new RegisterPair(regB, regC);
-  private final Register regPairD = new RegisterPair(regD, regE);
-  private final Register regPairH = new RegisterPair(regH, regL);
+  private final RegisterPair regPairB = new RegisterPair(regB, regC);
+
+  private final Register regD = new Register8Bit();
+  private final Register regE = new Register8Bit();
+  private final RegisterPair regPairD = new RegisterPair(regD, regE);
+
+  private final Register regH = new Register8Bit();
+  private final Register regL = new Register8Bit();
+  private final RegisterPair regPairH = new RegisterPair(regH, regL);
 
   private final StatusBitRegister statusBits = new StatusBitRegister();
+  private final RegisterPair regPairPSW = new RegisterPair(statusBits, accumulator);
+
   private final Register16Bit programCounter = new Register16Bit();
   private final Register stackPointer = new Register16Bit();
   private final Memory ram = new Memory();
@@ -40,6 +44,13 @@ public class CPU {
     ram.set(stackPointer, high);
     decrement(stackPointer);
     ram.set(stackPointer, low);
+  }
+
+  private void stackPop(final RegisterPair pair) {
+    pair.setLow(ram.get(stackPointer));
+    increment(stackPointer);
+    pair.setHigh(ram.get(stackPointer));
+    increment(stackPointer);
   }
 
   private void checkAndSetStatusBits(final Register register) {
@@ -334,16 +345,154 @@ public class CPU {
     int lsn = accumulator.get() & 0x0f;
     if ((lsn > 9) || statusBits.isAuxCarry()) {
       lsn += 6;
-      statusBits.assignAuxCarry(lsn > 9);
+      statusBits.setAuxCarry();
       lsn &= 0x0f;
     }
     if ((msn > 9) || statusBits.isCarry()) {
       msn += 6;
-      statusBits.assignCarry(msn > 9);
+      statusBits.setCarry();
       msn &= 0x0f;
     }
     accumulator.set((msn << 4) | lsn);
     checkAndSetStatusBits(accumulator);
+  }
+
+  //////////////////////////////////////
+  ///// REGISTER PAIR INSTRUCTIONS /////
+  //////////////////////////////////////
+
+  private RegisterPair getRegisterPair(final int regPair) {
+    switch (regPair) {
+      case 0:
+        return regPairB;
+      case 1:
+        return regPairD;
+      case 2:
+        return regPairH;
+      case 3:
+        return regPairPSW;
+      default:
+        throw new RuntimeException("Invalid register pair number");
+    }
+  }
+
+  /**
+   * PUSH (PUSH DATA ONTO STACK) - The contents of the specified register pair
+   * (rp) are stored in the two bytes of memory at an address indicated by the
+   * Stack Pointer. The contents of the first register are PUSHed into the address
+   * one less than the address in the Stack Pointer. The contents of the second
+   * register are PUSHed into the address two less than the address in the Stack
+   * Pointer.
+   *
+   * If the Status Bit Register and Accumulator (register pair PSW) pair is
+   * specified, the first byte PUSHed into memory is the Status Bit Register.
+   *
+   * After the PUSH instruction is implemented, the Stack Pointer is automatically
+   * decremented by two.
+   *
+   * Status Bits: Unaffected
+   */
+  private void pushDataOntoStack(final int regPair) {
+    stackPush(getRegisterPair(regPair));
+  }
+
+  /**
+   * POP (POP DATA OFF STACK) - The contents of the specified register pair (rp)
+   * are retrieved from the two bytes of memory at an address indicated by the
+   * Stack Pointer. The contents of the memory byte at the Stack Pointer address
+   * are loaded into the second register of the pair, and the contents of the byte
+   * at the Stack Pointer address plus one are loaded into the first register of
+   * the pair.
+   *
+   * If the Status Bit Register and Accumulator (register pair PSW) is specified,
+   * the contents of the byte at the stack pointer address plus one are used to
+   * set or reset the status bits.
+   *
+   * After the POP instruction is implemented, the Stack Pointer is automatically
+   * incremented by two.
+   *
+   * Status Bits Affected: None unless register pair PSW is specified.
+   */
+  private void popDataOffStack(final int regPair) {
+    stackPop(getRegisterPair(regPair));
+  }
+
+  /**
+   * DAD (DOUBLE ADD) - The 16-bit number formed by the two bytes in the specified
+   * register pair (rp) is added to the 16-bit number formed by the two bytes in
+   * the H and L register pair.
+   *
+   * Status Bits Affected: Carry
+   */
+  private void doubleAdd(final int regPair) {
+    int result = getRegisterPair(regPair).get() + regPairH.get();
+    statusBits.assignCarry(result > 0xffff);
+    result &= 0xffff;
+    regPairH.set(result);
+  }
+
+  /**
+   * INX (INCREMENT REGISTER PAIR) - The 16-bit number formed by the two bytes in
+   * the specified register pair (rp) is incremented by one.
+   *
+   * Status Bits: Unaffected
+   */
+  private void incrementRegisterPair(final int regPair) {
+    increment(getRegisterPair(regPair));
+  }
+
+  /**
+   * DCX (DECREMENT REGISTER PAIR) - The 16-bit number formed by the two bytes in
+   * the specified register pair is decremented by one
+   *
+   * Status Bits: Unaffected
+   */
+  private void decrementRegisterPair(final int regPair) {
+    decrement(getRegisterPair(regPair));
+  }
+
+  /**
+   * XCHG (EXCHANGE REGISTERS) - The 16-bit number formed by the contents of the H
+   * and L registers is exchanged with the 16-bit number formed by the contents of
+   * the D and E registers.
+   *
+   * Status Bits: Unaffected
+   */
+  private void exchangeRegisters() {
+    final int temp = regPairH.get();
+    regPairH.set(regPairD.get());
+    regPairD.set(temp);
+  }
+
+  /**
+   * XTHL (EXCHANGE STACK) - The byte stored in the L register is exchanged with
+   * the memory byte addressed by the Stack Pointer. The byte stored in the H
+   * register is exchanged with the memory byte at the address one greater than
+   * that addressed by the stack pointer.
+   *
+   * Status Bits: Unaffected
+   */
+  private void exchangeStack() {
+    int temp = regL.get();
+    Register memByte = ram.address(stackPointer);
+    regL.set(memByte.get());
+    memByte.set(temp);
+
+    temp = regH.get();
+    memByte = ram.address(stackPointer, 1);
+    regH.set(memByte.get());
+    memByte.set(temp);
+  }
+
+  /**
+   * SPHL (LOAD SP FROM H AND L) - The 16-bit contents of the H and L registers
+   * replace the contents of the Stack Pointer without affecting the contents of
+   * the H and L registers.
+   *
+   * Status Bits: Unaffected
+   */
+  private void loadSPFromHAndL() {
+    stackPointer.set(regPairH.get());
   }
 
   private void executeInstruction() {
@@ -373,7 +522,7 @@ public class CPU {
       case 0357:
       case 0367:
       case 0377:
-        restartInstruction(instruction & 0070);
+        restartInstruction(get3BitParam(instruction));
         break;
       case 0077:
         complementCarry();
@@ -392,7 +541,7 @@ public class CPU {
       case 0054:
       case 0064:
       case 0074:
-        incrementRegisterOrMemory(instruction & 0070);
+        incrementRegisterOrMemory(get3BitParam(instruction));
         break;
       case 0005:
       case 0015:
@@ -402,7 +551,7 @@ public class CPU {
       case 0055:
       case 0065:
       case 0075:
-        decrementRegisterOrMemory(instruction & 0070);
+        decrementRegisterOrMemory(get3BitParam(instruction));
         break;
       case 0057:
         complementAccumulator();
@@ -410,7 +559,54 @@ public class CPU {
       case 0047:
         decimalAdjustAccumulator();
         break;
+      case 0305:
+      case 0325:
+      case 0345:
+      case 0365:
+        pushDataOntoStack(get2BitParam(instruction));
+        break;
+      case 0301:
+      case 0321:
+      case 0341:
+      case 0361:
+        popDataOffStack(get2BitParam(instruction));
+        break;
+      case 0011:
+      case 0031:
+      case 0051:
+      case 0071:
+        doubleAdd(get2BitParam(instruction));
+        break;
+      case 0003:
+      case 0023:
+      case 0043:
+      case 0063:
+        incrementRegisterPair(get2BitParam(instruction));
+        break;
+      case 0013:
+      case 0033:
+      case 0053:
+      case 0073:
+        decrementRegisterPair(get2BitParam(instruction));
+        break;
+      case 0353:
+        exchangeRegisters();
+        break;
+      case 0343:
+        exchangeStack();
+        break;
+      case 0371:
+        loadSPFromHAndL();
+        break;
     }
     increment(programCounter);
+  }
+
+  private int get3BitParam(final int num) {
+    return (num & 0070) >> 3;
+  }
+
+  private int get2BitParam(final int num) {
+    return (num & 0060) >> 4;
   }
 }

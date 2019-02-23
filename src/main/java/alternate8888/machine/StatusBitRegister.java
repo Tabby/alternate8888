@@ -6,7 +6,7 @@ package alternate8888.machine;
  *
  * @author Tabby Cromarty
  */
-public class StatusBitRegister {
+public class StatusBitRegister implements Register {
 
   /**
    * This bit is set to 1 if a carry has occurred. The Carry Bit is usually
@@ -21,26 +21,45 @@ public class StatusBitRegister {
    * can contain up to the decimal equivalent of from -128 to +127 if the most
    * significant bit is used to indicate the polarity of the result.
    */
-  private static final byte SIGN_BIT = 0x02;
+  private static final byte SIGN_BIT = (byte) 0x80;
   /**
    * This bit is set to 1 if the result of certain instructions is zero and reset
    * to 0 if the result is greater than zero.
    */
-  private static final byte ZERO_BIT = 0x04;
+  private static final byte ZERO_BIT = 0x40;
   /**
    * Certain operations check the parity of the result. Parity indicates the odd
    * or even status of the 1 bits in the result. The if there is an even number of
    * 1 bits, the Parity Bit is set to 1, and if there is an odd number of 1 bits,
    * the Parity Bit is set to 0.
    */
-  private static final byte PARITY_BIT = 0x08;
+  private static final byte PARITY_BIT = 0x04;
   /**
    * If set to 1, this bit indicates a carry out of bit 3 of a result. 0 indicates
    * no carry. This status bit is affected by only one instruction (DAA).
    */
   private static final byte AUX_CARRY_BIT = 0x10;
 
-  private byte status = 0x00;
+  /*
+   * Register format:
+   *
+   * -7 Sign Bit
+   *
+   * -6 Zero Bit
+   *
+   * -5 0
+   *
+   * -4 Auxiliary Carry Bit
+   *
+   * -3 0
+   *
+   * -2 Parity Bit
+   *
+   * -1 1
+   *
+   * -0 Carry Bit
+   */
+  private byte status = 0x02;
 
   private boolean isSet(final byte bit) {
     return (status & bit) != 0;
@@ -60,7 +79,7 @@ public class StatusBitRegister {
   }
 
   private void clear(final byte bit) {
-    status = (byte) (status & (0x1F ^ bit));
+    status = (byte) (status & (0xFF ^ bit));
   }
 
   private void toggle(final byte bit) {
@@ -165,5 +184,20 @@ public class StatusBitRegister {
 
   public void toggleAuxCarry() {
     toggle(AUX_CARRY_BIT);
+  }
+
+  @Override
+  public int get() {
+    return status;
+  }
+
+  @Override
+  public void set(final int data) {
+    status = (byte) data;
+  }
+
+  @Override
+  public int getWidth() {
+    return 8;
   }
 }

@@ -18,8 +18,13 @@ public class Memory {
     }
   }
 
+  public Register address(final Register register,
+                          final int offset) {
+    return bytes[register.get() + offset];
+  }
+
   public Register address(final Register register) {
-    return bytes[register.get()];
+    return address(register, 0);
   }
 
   private Register address(final int high,
