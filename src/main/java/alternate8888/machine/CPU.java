@@ -495,6 +495,83 @@ public class CPU {
     stackPointer.set(regPairH.get());
   }
 
+  ///////////////////////////////////////////
+  ///// ROTATE ACCUMULATOR INSTRUCTIONS /////
+  ///////////////////////////////////////////
+
+  /**
+   * RLC (ROTATE ACCUMULATOR LEFT) - The accumulator byte is rotated one bit
+   * position to the left. The 7 bit position now occupies the 0 bit position and
+   * the Carry Bit is set with the value of the 7 bit before rotation.
+   *
+   * Status Bits Affected: Carry
+   */
+  private void rotateAccumulatorLeft() {
+    int data = accumulator.get() << 1;
+    final boolean setCarry = (data & 0x100) > 0;
+    if (setCarry) {
+      data |= 0x01;
+      data &= 0xff;
+    }
+    statusBits.assignCarry(setCarry);
+    accumulator.set(data);
+  }
+
+  /**
+   * RRC (ROTATE ACCUMULATOR RIGHT) - The accumulator byte is rotated one bit
+   * position to the right. The 0 bit position now occupies the 7 bit position and
+   * the carry bit is set with the value of the 0 bit before rotation.
+   *
+   * Status Bits Affected: Carry
+   */
+  private void rotateAccumulatorRight() {
+    int data = accumulator.get();
+    final boolean setCarry = (data & 0x01) > 0;
+    data = data >> 1;
+    if (setCarry) {
+      data |= 0x80;
+    }
+    statusBits.assignCarry(setCarry);
+    accumulator.set(data);
+  }
+
+  /**
+   * RAL (ROTATE ACCUMULATOR LEFT THROUGH CARRY) - The accumulator byte is rotated
+   * one bit position to the left through the Carry bit. The 7 bit position then
+   * occupies the Carry Bit and the Carry Bit occupies the 0 bit position.
+   *
+   * Status Bits Affected: Carry
+   */
+  private void rotateAccumulatorLeftThroughCarry() {
+    int data = accumulator.get() << 1;
+    final boolean isCarry = statusBits.isCarry();
+    final boolean setCarry = (data & 0x100) > 0;
+    if (isCarry) {
+      data |= 0x01;
+    }
+    statusBits.assignCarry(setCarry);
+    accumulator.set(data & 0xff);
+  }
+
+  /**
+   * RAR (ROTATE ACCUMULATOR RIGHT THROUGH CARRY) - The accumulator byte is
+   * rotated one bit position to the right through the Carry Bit and the Carry Bit
+   * occupies the 7 bit position.
+   *
+   * Status Bits Affected: Carry
+   */
+  private void rotateAccumulatorRightThroughCarry() {
+    int data = accumulator.get();
+    final boolean isCarry = statusBits.isCarry();
+    final boolean setCarry = (data & 0x01) > 0;
+    data = data >> 1;
+    if (isCarry) {
+      data |= 0x80;
+    }
+    statusBits.assignCarry(setCarry);
+    accumulator.set(data);
+  }
+
   private void executeInstruction() {
     instructionRegister.set(ram.get(programCounter));
     final int instruction = instructionRegister.get();
@@ -597,6 +674,18 @@ public class CPU {
         break;
       case 0371:
         loadSPFromHAndL();
+        break;
+      case 0007:
+        rotateAccumulatorLeft();
+        break;
+      case 0017:
+        rotateAccumulatorRight();
+        break;
+      case 0027:
+        rotateAccumulatorLeftThroughCarry();
+        break;
+      case 0037:
+        rotateAccumulatorRightThroughCarry();
         break;
     }
     increment(programCounter);
